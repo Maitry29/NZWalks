@@ -1,11 +1,35 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using NZWalks.API.Data;
+using NZWalks.API.Models.Domain;
 
 namespace NZWalks.API.Controllers
-{
-    [Route("api/[controller]")]
+
+{   
+    [Route("api/[controller]")] // or  [Route("api/[Regions]")]
     [ApiController]
+       
+
+    
     public class RegionsController : ControllerBase
     {
+        private readonly NZWalksDbContext dbContext;
+
+        public RegionsController(NZWalksDbContext dbContext)
+        {
+            this.dbContext = dbContext;
+        }
+
+
+        //GET ALL Regions
+        //GET : http://localhost:portnumber/api/regions
+        [HttpGet]
+        public IActionResult GetAll()
+        {
+           var region = dbContext.Regions.ToList();
+
+            return Ok(region);
+
+        }
     }
 }
