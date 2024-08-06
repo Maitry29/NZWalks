@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NZWalks.API.Data;
 using NZWalks.API.Models.Domain;
+using System.Linq;
 
 namespace NZWalks.API.Repositories
 {
@@ -32,10 +33,40 @@ namespace NZWalks.API.Repositories
             return existingWalk;
         }
 
-        public async Task<List<Walks>> GetAllAsync()
+        public async Task<List<Walks>> GetAllAsync(string? filterOn = null, string? filterQuery = null,
+             string? sortBy = null, bool isAscending = true, int pageNumber = 1, int pageSize = 1000)
         {
-           return await dbContext.Walks.Include("Difficulty").Include("Region").ToListAsync();
+            var walks = dbContext.Walks.Include("Difficulty").Include("Region").AsQueryable();
+
+            //filtering
+            if (string.IsNullOrWhiteSpace(filterOn) == false && string.IsNullOrWhiteSpace(filterQuery) == false) 
+            {
+                if (filterOn.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    walks = walks.Where(X => X.Name.Contains(filterQuery));
+                }
+            }
+
+            //sorting
+            if (string.IsNullOrWhiteSpace(sortBy)== false)
+            {
+                if(sortBy.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    walks = isAscending ? walks.OrderBy(X => X.Name) : walks.OrderByDescending(X => X.Name);
+                }
+                else if(sortBy.Equals("Length",StringComparison.OrdinalIgnoreCase))
+                { 
+                    walks = isAscending ? walks.OrderBy(X => X.LengthInKm) : walks.OrderByDescending(X => X.LengthInKm);
+                }
+
+            }
+            //pagination
+            var skipResult = (pageNumber - 1) * pageSize;
+            return await walks.Skip(skipResult).Take(pageSize).ToListAsync();
+          // return await dbContext.Walks.Include("Difficulty").Include("Region").ToListAsync();
         }
+
+      
 
         public async Task<Walks?> GetByIdAsync(Guid id)
         {
